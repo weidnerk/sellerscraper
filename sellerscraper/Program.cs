@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Configuration;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
@@ -33,52 +34,43 @@ namespace webscraper
         //static string url = "https://www.ebay.com/itm/45-Piece-White-Dinnerware-Set-Square-Banquet-Plates-Dishes-Bowls-Kitchen-Dinner/181899005040";
         static string api_key = "ak-mc65k-44235-ae31p-4bsng-ygmrn";
         private static IWebDriver _driver;
-        readonly static string _logfile = "scrape_log.txt";
+        readonly static string _logfile = "log.txt";
         readonly static string HOME_DECOR_USER_ID = "65e09eec-a014-4526-a569-9f2d3600aa89";
 
         static DataModelsDB db = new DataModelsDB();
 
         static void Main(string[] args)
         {
-            string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
-            //var d = DateTime.ParseExact("Nov-14-19 18:06:07", "MMM-dd-yy hh:mm:ss", CultureInfo.InvariantCulture);
-
-            //DateTime dateTime;
-            //bool r = DateTime.TryParse("Nov-14-19 18:06:07", out dateTime);
-
-            //var settings = db.UserSettingsView.Find(HOME_DECOR_USER_ID, 1);
-            var settings = db.GetUserSettings(connStr, HOME_DECOR_USER_ID);
-            // var settings = db.UserSettingsView.Single(m => m.UserID == HOME_DECOR_USER_ID);
-
-            //foreach (SearchItem searchItem in result.searchResult.item)
-            //{
-            //    string itemId = searchItem.itemId;
-            //    Console.WriteLine(searchItem.title);
-            //}
-
-            //GetSold(url);
-            //YTVideo();
-            // getpage();
-            // anotherTry(url);
-            //var r = GetPagePhantomJs(url);
-
-            string seller = "tuckeronlinesupply";
-            //string seller = "optimuze";
-            Task.Run(async () =>
+            if (args.Length == 1)
             {
-                await FetchSeller(settings, seller, 5);
-            }).Wait();
+                string seller = args[0];
+                string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
+                var settings = db.GetUserSettings(connStr, HOME_DECOR_USER_ID);
 
+                //string seller = "dealocrat";
+                //string seller = "fountain-of-deals";
+                //string seller = "valleysupershop";
+                //string seller = "tuckeronlinesupply";
+                //string seller = "optimuze";
 
-            // Wikipedia();
+                dsutil.DSUtil.WriteFile(_logfile, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Start scan: " + seller, "admin");
 
-            Console.Write("completed....");
-            Console.ReadKey();
+                int numSellerItems = 0;
+                Task.Run(async () =>
+                {
+                    //numSellerItems = await FetchSeller(settings, seller, 2);
+                    numSellerItems = await FetchSeller(settings, seller, Int32.MaxValue);
+                }).Wait();
+                dsutil.DSUtil.WriteFile(_logfile, "# seller items: " + numSellerItems, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Complete scan: " + seller, "admin");
+                Process.Start("notepad.exe", "log.txt");
+            }
         }
 
-        static async Task FetchSeller(UserSettingsView settings, string seller, int numItemsToFetch)
+        static async Task<int> FetchSeller(UserSettingsView settings, string seller, int numItemsToFetch)
         {
-            string output = null;
+            //string output = null;
             int numItems = 0;
             
             var sh = new SearchHistory();
@@ -89,50 +81,57 @@ namespace webscraper
             sh.StoreID = settings.StoreID;
             var sh_updated = await db.SearchHistoryAdd(sh);
 
-            var modelview = eBayUtility.FetchSeller.ScanSeller(settings, seller, 30, false);
-            foreach (var listing in modelview.Listings)
+            try
             {
-                output += listing.ItemID + "\n";
-                output += listing.Title + "\n";
-
-                var si = await eBayUtility.ebayAPIs.GetSingleItem(listing.ItemID, settings.AppID);
-                var listingStatus = si.ListingStatus;
-
-                if (listingStatus != "Completed")
+                var modelview = eBayUtility.FetchSeller.ScanSeller(settings, seller, 30);
+                int listingCount = modelview.Listings.Count;
+                foreach (var listing in modelview.Listings)
                 {
-                    if (numItems++ < numItemsToFetch)
-                    {
-                        var transactions = NavigateToTransHistory(listing.EbayUrl);
+                    //output += listing.ItemID + "\n";
+                    //output += listing.Title + "\n";
 
-                        if (transactions != null)
+                    var si = await eBayUtility.ebayAPIs.GetSingleItem(listing.ItemID, settings.AppID);
+                    var listingStatus = si.SellerListing.ListingStatus;
+
+                    if (listingStatus != "Completed")
+                    {
+                        if (numItems++ < numItemsToFetch)
                         {
-                            var orderHistory = new OrderHistory();
-                            orderHistory.ItemID = listing.ItemID;
-                            orderHistory.Title = listing.Title;
-                            orderHistory.EbayUrl = listing.EbayUrl;
-                            orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
-                            orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
-                            orderHistory.EbaySellerPrice = listing.SellerPrice;
-                            orderHistory.Description = si.Description;
-                            orderHistory.ListingStatus = listingStatus;
-                            orderHistory.IsMultiVariationListing = listing.Variation;
-                            
-                            orderHistory.RptNumber = sh.ID;
-                            orderHistory.OrderHistoryDetails = transactions;
-                            db.OrderHistorySave(orderHistory);
-                            // write to log
-                            foreach (var order in transactions)
+                            Console.WriteLine(numItems + "/" + listingCount);
+                            var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl);
+
+                            if (transactions != null)
                             {
-                                output += order.Qty + "\n";
-                                output += order.Price + "\n";
-                                output += order.DateOfPurchase + "\n";
+                                var orderHistory = new OrderHistory();
+                                orderHistory.ItemID = listing.ItemID;
+                                orderHistory.Title = listing.SellerListing.Title;
+                                orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
+                                orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
+                                orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
+                                orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
+                                orderHistory.Description = si.Description;
+                                orderHistory.ListingStatus = listingStatus;
+                                orderHistory.IsMultiVariationListing = listing.SellerListing.Variation;
+
+                                orderHistory.RptNumber = sh.ID;
+                                orderHistory.OrderHistoryDetails = transactions;
+                                db.OrderHistorySave(orderHistory);
+                                await db.ItemSpecificSave(si.SellerListing.ItemSpecifics);
+
+                                // write to log
+                                //foreach (var order in transactions)
+                                //{
+                                //    output += order.Qty + "\n";
+                                //    output += order.Price + "\n";
+                                //    output += order.DateOfPurchase + "\n";
+                                //}
                             }
+                            else
+                            {
+                                //output += "No transactions\n";
+                            }
+                            //output += "\n";
                         }
-                        else
-                        {
-                            output += "No transactions\n";
-                        }
-                        output += "\n";
                     }
                     else
                     {
@@ -140,7 +139,11 @@ namespace webscraper
                     }
                 }
             }
-            File.WriteAllText(@"C:\temp\log.txt", output);
+            catch (Exception exc)
+            {
+                string msg = dsutil.DSUtil.ErrMsg("FetchSeller", exc);
+            }
+            return numItems;
         }
 
         /// <summary>

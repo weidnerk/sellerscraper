@@ -26,6 +26,22 @@ using System.Threading.Tasks;
 
 namespace webscraper
 {
+    public class ListingStatus
+    {
+        public int Active { get; set; }
+        public int Completed { get; set; }
+        public int Custom { get; set; }
+        public int CustomCode { get; set; }
+        public int Ended { get; set; }
+    }
+    public class SellingState
+    {
+        public int Active { get; set; }
+        public int Canceled { get; set; }
+        public int Ended { get; set; }
+        public int EndedWithSales { get; set; }
+        public int EndedWithoutSales { get; set; }
+    }
     class Program
     {
         // static string url = "https://www.walmart.com/ip/Sauder-Beginnings-Dresser-Highland-Oak-Finish/260081375";
@@ -39,6 +55,51 @@ namespace webscraper
 
         static DataModelsDB db = new DataModelsDB();
 
+        static ListingStatus ListingStatusObject = new ListingStatus();
+        static SellingState SellingStateObject = new SellingState();
+
+        static void ListingStatusCount(string listingStatus)
+        {
+            switch (listingStatus)
+            {
+                case "Ended":
+                    ++ListingStatusObject.Ended;
+                    break;
+
+                case "Active":
+                    ++ListingStatusObject.Active;
+                    break;
+
+                case "Completed":
+                    ++ListingStatusObject.Completed;
+                    break;
+            }
+        }
+        static void SellingStateCount(string sellingState)
+        {
+            switch (sellingState)
+            {
+                case "Active":
+                    ++SellingStateObject.Active;
+                    break;
+
+                case "Canceled":
+                    ++SellingStateObject.Canceled;
+                    break;
+
+                case "Ended":
+                    ++SellingStateObject.Ended;
+                    break;
+
+                case "EndedWithSales":
+                    ++SellingStateObject.EndedWithSales;
+                    break;
+
+                case "EndedWithoutSales":
+                    ++SellingStateObject.EndedWithoutSales;
+                    break;
+            }
+        }
         static void Main(string[] args)
         {
             if (args.Length == 1)
@@ -64,15 +125,41 @@ namespace webscraper
                 }).Wait();
                 dsutil.DSUtil.WriteFile(_logfile, "# seller items: " + numSellerItems, "admin");
                 dsutil.DSUtil.WriteFile(_logfile, "Complete scan: " + seller, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "LISTING STATUS ", "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Completed: " + ListingStatusObject.Completed, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Active: " + ListingStatusObject.Active, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Ended: " + ListingStatusObject.Ended, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "SELLING STATE ", "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Canceled: " + SellingStateObject.Canceled, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Active: " + SellingStateObject.Active, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Ended: " + SellingStateObject.Ended, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "EndedWithSales: " + SellingStateObject.EndedWithSales, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "EndedWithoutSales: " + SellingStateObject.EndedWithoutSales, "admin");
                 Process.Start("notepad.exe", "log.txt");
             }
+        }
+
+        static string SellingState(string itemID, List<SearchResult> searchResult)
+        {
+            foreach (var x in searchResult)
+            {
+                foreach (var y in x.item)
+                {
+                    if (y.itemId == itemID)
+                    {
+                        return y.sellingStatus.sellingState;
+                    }
+                }
+            }
+            return null;
         }
 
         static async Task<int> FetchSeller(UserSettingsView settings, string seller, int numItemsToFetch)
         {
             //string output = null;
             int numItems = 0;
-            
+            int completedItems = 0;
+
             var sh = new SearchHistory();
             sh.UserId = settings.UserID;
             sh.Seller = seller;
@@ -85,63 +172,81 @@ namespace webscraper
             {
                 var modelview = eBayUtility.FetchSeller.ScanSeller(settings, seller, 30);
                 int listingCount = modelview.Listings.Count;
+                dsutil.DSUtil.WriteFile(_logfile, "scan seller count: " + listingCount, "admin");
                 foreach (var listing in modelview.Listings)
                 {
+                    // Iterate completed items
+                    //foreach (SearchItem searchItem in modelview.SearchResult)
+                    //{ }
                     //output += listing.ItemID + "\n";
-                    //output += listing.Title + "\n";
-
-                    var si = await eBayUtility.ebayAPIs.GetSingleItem(listing.ItemID, settings.AppID);
-                    var listingStatus = si.SellerListing.ListingStatus;
-
-                    if (listingStatus != "Completed")
+                    //output += listing.Title + "\n";      if (listing.ItemID == "352726925834")
+                    if (true)
                     {
-                        if (numItems++ < numItemsToFetch)
+                        var si = await eBayUtility.ebayAPIs.GetSingleItem(listing.ItemID, settings.AppID);
+                        var listingStatus = si.SellerListing.ListingStatus;
+
+                        // when navigating to a listing from the website, ebay adds a hash
+                        // you don't seem to need it unless navigating to a completed item in which case it doesn't work
+                        // i'm not sure how to generate the hash
+
+                        ListingStatusCount(listingStatus);
+                        var sellingState = SellingState(listing.ItemID, modelview.SearchResult);
+                        SellingStateCount(sellingState);
+
+                        if (listingStatus != "Completed")
                         {
-                            Console.WriteLine(numItems + "/" + listingCount);
-                            var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl);
-
-                            if (transactions != null)
+                            if (numItems++ < numItemsToFetch)
                             {
-                                var orderHistory = new OrderHistory();
-                                orderHistory.ItemID = listing.ItemID;
-                                orderHistory.Title = listing.SellerListing.Title;
-                                orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
-                                orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
-                                orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
-                                orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
-                                orderHistory.Description = si.Description;
-                                orderHistory.ListingStatus = listingStatus;
-                                orderHistory.IsMultiVariationListing = listing.SellerListing.Variation;
+                                Console.WriteLine(numItems + "/" + listingCount);
+                                var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl);
 
-                                orderHistory.RptNumber = sh.ID;
-                                orderHistory.OrderHistoryDetails = transactions;
-                                db.OrderHistorySave(orderHistory);
-                                await db.ItemSpecificSave(si.SellerListing.ItemSpecifics);
+                                if (transactions != null)
+                                {
+                                    var orderHistory = new OrderHistory();
+                                    orderHistory.ItemID = listing.ItemID;
+                                    orderHistory.Title = listing.SellerListing.Title;
+                                    orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
+                                    orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
+                                    orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
+                                    orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
+                                    orderHistory.Description = si.Description;
+                                    orderHistory.ListingStatus = listingStatus;
+                                    orderHistory.IsMultiVariationListing = listing.SellerListing.Variation;
 
-                                // write to log
-                                //foreach (var order in transactions)
-                                //{
-                                //    output += order.Qty + "\n";
-                                //    output += order.Price + "\n";
-                                //    output += order.DateOfPurchase + "\n";
-                                //}
+                                    orderHistory.RptNumber = sh.ID;
+                                    orderHistory.OrderHistoryDetails = transactions;
+                                    string orderHistoryOutput = db.OrderHistorySave(orderHistory);
+                                    string specificOutput = await db.ItemSpecificSave(si.SellerListing.ItemSpecifics);
+
+                                    //string output = eBayUtility.FetchSeller.DumpItemSpecifics(si.SellerListing.ItemSpecifics);
+
+                                    // write to log
+                                    //foreach (var order in transactions)
+                                    //{
+                                    //    output += order.Qty + "\n";
+                                    //    output += order.Price + "\n";
+                                    //    output += order.DateOfPurchase + "\n";
+                                    //}
+                                }
+                                else
+                                {
+                                    //output += "No transactions\n";
+                                }
+                                //output += "\n";
                             }
-                            else
-                            {
-                                //output += "No transactions\n";
-                            }
-                            //output += "\n";
+                        }
+                        else
+                        {
+                            ++completedItems;
                         }
                     }
-                    else
-                    {
-                        break;
-                    }
                 }
+                dsutil.DSUtil.WriteFile(_logfile, "completed items count: " + completedItems, "admin");
             }
             catch (Exception exc)
             {
                 string msg = dsutil.DSUtil.ErrMsg("FetchSeller", exc);
+                dsutil.DSUtil.WriteFile(_logfile, msg, "");
             }
             return numItems;
         }
@@ -152,6 +257,7 @@ namespace webscraper
         /// <param name="sellerListingUrl"></param>
         static List<OrderHistoryDetail> NavigateToTransHistory(string sellerListingUrl)
         {
+            List<OrderHistoryDetail> transactions = null; ;
             try
             {
                 IWebDriver driver = new ChromeDriver();
@@ -161,19 +267,26 @@ namespace webscraper
                 Thread.Sleep(2000);
 
                 var element = driver.FindElement(By.XPath("//a[contains(@href, 'https://offer.ebay.com/ws/eBayISAPI.dll?ViewBidsLogin')]"));
-                element.Click();
+                if (element == null)
+                {
+                    dsutil.DSUtil.WriteFile(_logfile, "Could not navigate to purchase history: " + sellerListingUrl, "admin");
+                }
+                else
+                {
+                    element.Click();
 
-                Thread.Sleep(3000);
-                var html = driver.FindElement(By.TagName("html")).GetAttribute("innerHTML");
+                    Thread.Sleep(3000);
+                    var html = driver.FindElement(By.TagName("html")).GetAttribute("innerHTML");
 
-                var transactions = eBayUtility.FetchSeller.GetTransactionsFromPage(html);
-
+                    transactions = eBayUtility.FetchSeller.GetTransactionsFromPage(html);
+                }
                 driver.Quit();
                 return transactions;
             }
             catch (Exception exc)
             {
-                string str = exc.Message;
+                string msg = dsutil.DSUtil.ErrMsg("NavigateToTransHistory", exc);
+                dsutil.DSUtil.WriteFile(_logfile, msg, "");
                 return null;
             }
         }
@@ -221,7 +334,7 @@ namespace webscraper
                 var links = n.Descendants("a")
                                .Select(a => a.GetAttributeValue("href", string.Empty))
                                .ToList();
-                
+
                 dsutil.DSUtil.WriteFile(_logfile, links[0], "");
 
                 string value2 = WebUtility.HtmlDecode(links[0]);
@@ -274,7 +387,7 @@ namespace webscraper
             //element.SendKeys(stringToSearchFor);
             //element.Submit();
 
-            var ps =_driver.PageSource.ToString();
+            var ps = _driver.PageSource.ToString();
 
             // Assert.That(_driver.Title, Is.StringContaining(stringToSearchFor));
             ((ITakesScreenshot)_driver).GetScreenshot().SaveAsFile("c:\\temp\\wm.png", ImageFormat.Png);

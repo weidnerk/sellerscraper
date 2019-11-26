@@ -198,7 +198,7 @@ namespace webscraper
                             if (numItems++ < numItemsToFetch)
                             {
                                 Console.WriteLine(numItems + "/" + listingCount);
-                                var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl);
+                                var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl, listing.ItemID);
 
                                 if (transactions != null)
                                 {
@@ -255,7 +255,7 @@ namespace webscraper
         /// Try not using HTML Agility pack
         /// </summary>
         /// <param name="sellerListingUrl"></param>
-        static List<OrderHistoryDetail> NavigateToTransHistory(string sellerListingUrl)
+        static List<OrderHistoryDetail> NavigateToTransHistory(string sellerListingUrl, string itemID)
         {
             List<OrderHistoryDetail> transactions = null; ;
             try
@@ -278,7 +278,7 @@ namespace webscraper
                     Thread.Sleep(3000);
                     var html = driver.FindElement(By.TagName("html")).GetAttribute("innerHTML");
 
-                    transactions = eBayUtility.FetchSeller.GetTransactionsFromPage(html);
+                    transactions = eBayUtility.FetchSeller.GetTransactionsFromPage(html, itemID);
                 }
                 driver.Quit();
                 return transactions;
@@ -286,7 +286,7 @@ namespace webscraper
             catch (Exception exc)
             {
                 string msg = dsutil.DSUtil.ErrMsg("NavigateToTransHistory", exc);
-                dsutil.DSUtil.WriteFile(_logfile, msg, "");
+                dsutil.DSUtil.WriteFile(_logfile, itemID + ": " + msg, "");
                 return null;
             }
         }

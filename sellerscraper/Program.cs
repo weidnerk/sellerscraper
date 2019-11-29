@@ -257,10 +257,10 @@ namespace webscraper
         /// <param name="sellerListingUrl"></param>
         static List<OrderHistoryDetail> NavigateToTransHistory(string sellerListingUrl, string itemID)
         {
-            List<OrderHistoryDetail> transactions = null; ;
+            List<OrderHistoryDetail> transactions = null;
+            IWebDriver driver = new ChromeDriver();
             try
             {
-                IWebDriver driver = new ChromeDriver();
                 Thread.Sleep(2000);
                 driver.Navigate().GoToUrl(sellerListingUrl);
                 driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(60));
@@ -285,6 +285,7 @@ namespace webscraper
             }
             catch (Exception exc)
             {
+                driver.Quit();
                 string msg = dsutil.DSUtil.ErrMsg("NavigateToTransHistory", exc);
                 dsutil.DSUtil.WriteFile(_logfile, itemID + ": " + msg, "");
                 return null;

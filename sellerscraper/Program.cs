@@ -4,9 +4,7 @@
  * https://www.youtube.com/watch?v=SKz4VYj5AzQ
  *
  */
-
 using dsmodels;
-using eBayUtility;
 using eBayUtility.WebReference;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -17,13 +15,11 @@ using System.Collections.ObjectModel;
 using System.Configuration;
 using System.Diagnostics;
 using System.Drawing.Imaging;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Data.Entity;
 
 namespace webscraper
 {
@@ -164,7 +160,6 @@ namespace webscraper
 
         static async Task<int> FetchSeller(UserSettingsView settings, string seller, int numItemsToFetch, int daysToScan)
         {
-            //string output = null;
             int numItems = 0;
             int completedItems = 0;
 
@@ -177,6 +172,7 @@ namespace webscraper
 
             int? rptNumber = null;
             DateTime? fromDate;
+            rptNumber = db.LatestRptNumber(seller);
             if (daysToScan > 0) 
             {
                 // passed an override value for date to start scan
@@ -185,7 +181,6 @@ namespace webscraper
             else
             {
                 // else calculate start scanning from seller's last sale
-                rptNumber = db.LatestRptNumber(seller);
                 if (rptNumber.HasValue)
                 {
                     fromDate = db.fromDateToScan(rptNumber.Value);

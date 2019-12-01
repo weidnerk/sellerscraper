@@ -23,6 +23,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Data.Entity;
 
 namespace webscraper
 {
@@ -102,41 +103,48 @@ namespace webscraper
         }
         static void Main(string[] args)
         {
-            if (args.Length == 1)
+            //Console.WriteLine(string.Join("\n", TimeZoneInfo.GetSystemTimeZones().OrderBy(o => o.Id).Select(x => x.Id)));
+
+            string seller = null;
+            int numDaysBack = 0;
+            if (args.Length > 0)
             {
-                string seller = args[0];
-                string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
-                var settings = db.GetUserSettings(connStr, HOME_DECOR_USER_ID);
-
-                //string seller = "dealocrat";
-                //string seller = "fountain-of-deals";
-                //string seller = "valleysupershop";
-                //string seller = "tuckeronlinesupply";
-                //string seller = "optimuze";
-
-                dsutil.DSUtil.WriteFile(_logfile, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "Start scan: " + seller, "admin");
-
-                int numSellerItems = 0;
-                Task.Run(async () =>
-                {
-                    //numSellerItems = await FetchSeller(settings, seller, 2);
-                    numSellerItems = await FetchSeller(settings, seller, Int32.MaxValue);
-                }).Wait();
-                dsutil.DSUtil.WriteFile(_logfile, "# seller items: " + numSellerItems, "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "Complete scan: " + seller, "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "LISTING STATUS ", "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "Completed: " + ListingStatusObject.Completed, "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "Active: " + ListingStatusObject.Active, "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "Ended: " + ListingStatusObject.Ended, "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "SELLING STATE ", "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "Canceled: " + SellingStateObject.Canceled, "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "Active: " + SellingStateObject.Active, "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "Ended: " + SellingStateObject.Ended, "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "EndedWithSales: " + SellingStateObject.EndedWithSales, "admin");
-                dsutil.DSUtil.WriteFile(_logfile, "EndedWithoutSales: " + SellingStateObject.EndedWithoutSales, "admin");
-                Process.Start("notepad.exe", "log.txt");
+                seller = args[0];
             }
+            if (args.Length > 1)
+            {
+                numDaysBack = Convert.ToInt32(args[1]);
+            }
+            if (args.Length == 0)
+            {
+                Console.WriteLine("invalid usage.");
+                return;
+            }
+            string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
+            var settings = db.GetUserSettings(connStr, HOME_DECOR_USER_ID);
+
+            dsutil.DSUtil.WriteFile(_logfile, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "Start scan: " + seller, "admin");
+
+            int numSellerItems = 0;
+            Task.Run(async () =>
+            {
+                //numSellerItems = await FetchSeller(settings, seller, 2);
+                numSellerItems = await FetchSeller(settings, seller, Int32.MaxValue, numDaysBack);
+            }).Wait();
+            dsutil.DSUtil.WriteFile(_logfile, "# seller items: " + numSellerItems, "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "Complete scan: " + seller, "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "LISTING STATUS ", "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "Completed: " + ListingStatusObject.Completed, "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "Active: " + ListingStatusObject.Active, "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "Ended: " + ListingStatusObject.Ended, "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "SELLING STATE ", "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "Canceled: " + SellingStateObject.Canceled, "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "Active: " + SellingStateObject.Active, "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "Ended: " + SellingStateObject.Ended, "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "EndedWithSales: " + SellingStateObject.EndedWithSales, "admin");
+            dsutil.DSUtil.WriteFile(_logfile, "EndedWithoutSales: " + SellingStateObject.EndedWithoutSales, "admin");
+            Process.Start("notepad.exe", "log.txt");
         }
 
         static string SellingState(string itemID, List<SearchResult> searchResult)
@@ -154,7 +162,7 @@ namespace webscraper
             return null;
         }
 
-        static async Task<int> FetchSeller(UserSettingsView settings, string seller, int numItemsToFetch)
+        static async Task<int> FetchSeller(UserSettingsView settings, string seller, int numItemsToFetch, int daysToScan)
         {
             //string output = null;
             int numItems = 0;
@@ -166,19 +174,45 @@ namespace webscraper
             sh.DaysBack = 30;
             sh.MinSoldFilter = 4;
             sh.StoreID = settings.StoreID;
-            var sh_updated = await db.SearchHistoryAdd(sh);
 
+            int? rptNumber = null;
+            DateTime? fromDate;
+            if (daysToScan > 0) 
+            {
+                // passed an override value for date to start scan
+                fromDate = DateTime.Now.AddDays(-daysToScan);
+            }
+            else
+            {
+                // else calculate start scanning from seller's last sale
+                rptNumber = db.LatestRptNumber(seller);
+                if (rptNumber.HasValue)
+                {
+                    fromDate = db.fromDateToScan(rptNumber.Value);
+                }
+                else
+                {
+                    fromDate = DateTime.Now.AddDays(-30);
+                }
+            }
+            if (!rptNumber.HasValue || rptNumber.Value == 0) 
+            {
+                // first time running seller
+                var sh_updated = await db.SearchHistoryAdd(sh);
+                rptNumber = sh_updated.ID;
+            }
+            else
+            {
+                //fromDate = new DateTime(2019, 11, 29);
+                await db.HistoryDetailRemove(rptNumber.Value, fromDate.Value);
+            }
             try
             {
-                var modelview = eBayUtility.FetchSeller.ScanSeller(settings, seller, 30);
+                var modelview = eBayUtility.FetchSeller.ScanSeller(settings, seller, fromDate.Value);
                 int listingCount = modelview.Listings.Count;
                 dsutil.DSUtil.WriteFile(_logfile, "scan seller count: " + listingCount, "admin");
                 foreach (var listing in modelview.Listings)
                 {
-                    // Iterate completed items
-                    //foreach (SearchItem searchItem in modelview.SearchResult)
-                    //{ }
-                    //output += listing.ItemID + "\n";
                     //output += listing.Title + "\n";      if (listing.ItemID == "352726925834")
                     if (true)
                     {
@@ -213,9 +247,9 @@ namespace webscraper
                                     orderHistory.ListingStatus = listingStatus;
                                     orderHistory.IsMultiVariationListing = listing.SellerListing.Variation;
 
-                                    orderHistory.RptNumber = sh.ID;
+                                    orderHistory.RptNumber = rptNumber.Value;
                                     orderHistory.OrderHistoryDetails = transactions;
-                                    string orderHistoryOutput = db.OrderHistorySave(orderHistory);
+                                    string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
                                     string specificOutput = await db.ItemSpecificSave(si.SellerListing.ItemSpecifics);
 
                                     //string output = eBayUtility.FetchSeller.DumpItemSpecifics(si.SellerListing.ItemSpecifics);

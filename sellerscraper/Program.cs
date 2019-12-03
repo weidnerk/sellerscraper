@@ -173,6 +173,10 @@ namespace webscraper
             int? rptNumber = null;
             DateTime? fromDate;
             rptNumber = db.LatestRptNumber(seller);
+            if (rptNumber.HasValue)
+            {
+                sh.ID = rptNumber.Value;
+            }
             if (daysToScan > 0) 
             {
                 // passed an override value for date to start scan
@@ -193,11 +197,12 @@ namespace webscraper
             if (!rptNumber.HasValue || rptNumber.Value == 0) 
             {
                 // first time running seller
-                var sh_updated = await db.SearchHistoryAdd(sh);
+                var sh_updated = await db.SearchHistoryUpdate(sh);
                 rptNumber = sh_updated.ID;
             }
             else
             {
+                await db.SearchHistoryUpdate(sh);
                 //fromDate = new DateTime(2019, 11, 29);
                 await db.HistoryDetailRemove(rptNumber.Value, fromDate.Value);
             }

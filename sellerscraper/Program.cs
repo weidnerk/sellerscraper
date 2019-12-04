@@ -216,8 +216,8 @@ namespace webscraper
                     //output += listing.Title + "\n";      if (listing.ItemID == "352726925834")
                     if (true)
                     {
-                        var si = await eBayUtility.ebayAPIs.GetSingleItem(listing.ItemID, settings.AppID);
-                        var listingStatus = si.SellerListing.ListingStatus;
+                        var si = await eBayUtility.ebayAPIs.GetSingleItem(settings, listing.ItemID);
+                        var listingStatus = si.ListingStatus;
 
                         // when navigating to a listing from the website, ebay adds a hash
                         // you don't seem to need it unless navigating to a completed item in which case it doesn't work
@@ -250,7 +250,7 @@ namespace webscraper
                                     orderHistory.RptNumber = rptNumber.Value;
                                     orderHistory.OrderHistoryDetails = transactions;
                                     string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
-                                    string specificOutput = await db.ItemSpecificSave(si.SellerListing.ItemSpecifics);
+                                    string specificOutput = await db.ItemSpecificSave(si.ItemSpecifics);
 
                                     //string output = eBayUtility.FetchSeller.DumpItemSpecifics(si.SellerListing.ItemSpecifics);
 

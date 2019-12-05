@@ -245,7 +245,7 @@ namespace webscraper
                                     orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
                                     orderHistory.Description = si.Description;
                                     orderHistory.ListingStatus = listingStatus;
-                                    orderHistory.IsMultiVariationListing = listing.SellerListing.Variation;
+                                    orderHistory.IsSellerVariation = listing.SellerListing.Variation;
 
                                     orderHistory.RptNumber = rptNumber.Value;
                                     orderHistory.OrderHistoryDetails = transactions;

@@ -239,12 +239,12 @@ namespace webscraper
                                     var orderHistory = new OrderHistory();
                                     orderHistory.ItemID = listing.ItemID;
                                     orderHistory.Title = listing.SellerListing.Title;
-                                    orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
+                                    //orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
                                     orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
                                     orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
                                     orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
                                     orderHistory.Description = si.Description;
-                                    orderHistory.ListingStatus = listingStatus;
+                                    //orderHistory.ListingStatus = listingStatus;
                                     orderHistory.IsSellerVariation = listing.SellerListing.Variation;
 
                                     orderHistory.RptNumber = rptNumber.Value;

@@ -162,6 +162,7 @@ namespace webscraper
         {
             int numItems = 0;
             int completedItems = 0;
+            bool retRemoveDetail = false;
 
             var sh = new SearchHistory();
             sh.UserId = settings.UserID;
@@ -177,7 +178,7 @@ namespace webscraper
             {
                 sh.ID = rptNumber.Value;
             }
-            if (daysToScan > 0) 
+            if (daysToScan > 0)
             {
                 // passed an override value for date to start scan
                 fromDate = DateTime.Now.AddDays(-daysToScan);
@@ -194,7 +195,7 @@ namespace webscraper
                     fromDate = DateTime.Now.AddDays(-30);
                 }
             }
-            if (!rptNumber.HasValue || rptNumber.Value == 0) 
+            if (!rptNumber.HasValue || rptNumber.Value == 0)
             {
                 // first time running seller
                 var sh_updated = await db.SearchHistoryUpdate(sh);
@@ -204,7 +205,7 @@ namespace webscraper
             {
                 await db.SearchHistoryUpdate(sh);
                 //fromDate = new DateTime(2019, 11, 29);
-                await db.HistoryDetailRemove(rptNumber.Value, fromDate.Value);
+                retRemoveDetail = await db.HistoryDetailRemove(rptNumber.Value, fromDate.Value);
             }
             try
             {

@@ -214,7 +214,7 @@ namespace webscraper
                 dsutil.DSUtil.WriteFile(_logfile, "scan seller count: " + listingCount, "admin");
                 foreach (var listing in modelview.Listings)
                 {
-                    //output += listing.Title + "\n";      if (listing.ItemID == "352726925834")
+                    //output += listing.Title + "\n";      if (listing.ItemID == "392535456736")
                     if (true)
                     {
                         var si = await eBayUtility.ebayAPIs.GetSingleItem(settings, listing.ItemID);

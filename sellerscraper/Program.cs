@@ -240,7 +240,7 @@ namespace webscraper
                                     var orderHistory = new OrderHistory();
                                     orderHistory.ItemID = listing.ItemID;
                                     orderHistory.Title = listing.SellerListing.Title;
-                                    //orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
+                                    orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
                                     orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
                                     orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
                                     orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;

@@ -167,8 +167,8 @@ namespace webscraper
             var sh = new SearchHistory();
             sh.UserId = settings.UserID;
             sh.Seller = seller;
-            sh.DaysBack = 30;
-            sh.MinSoldFilter = 4;
+            //sh.DaysBack = 30;
+            //sh.MinSoldFilter = 4;
             sh.StoreID = settings.StoreID;
 
             int? rptNumber = null;
@@ -198,12 +198,14 @@ namespace webscraper
             if (!rptNumber.HasValue || rptNumber.Value == 0)
             {
                 // first time running seller
+                sh.Updated = DateTime.Now;
                 var sh_updated = await db.SearchHistoryUpdate(sh);
                 rptNumber = sh_updated.ID;
             }
             else
             {
-                await db.SearchHistoryUpdate(sh);
+                sh.Updated = DateTime.Now;
+                await db.SearchHistoryUpdate(sh, "Updated");
                 //fromDate = new DateTime(2019, 11, 29);
                 retRemoveDetail = await db.HistoryDetailRemove(rptNumber.Value, fromDate.Value);
             }

@@ -212,73 +212,76 @@ namespace webscraper
             try
             {
                 var modelview = eBayUtility.FetchSeller.ScanSeller(settings, seller, fromDate.Value);
-                int listingCount = modelview.Listings.Count;
-                dsutil.DSUtil.WriteFile(_logfile, "scan seller count: " + listingCount, "admin");
-                foreach (var listing in modelview.Listings)
+                if (modelview != null)
                 {
-                    //output += listing.Title + "\n";      if (listing.ItemID == "392535456736")
-                    if (true)
+                    int listingCount = modelview.Listings.Count;
+                    dsutil.DSUtil.WriteFile(_logfile, "scan seller count: " + listingCount, "admin");
+                    foreach (var listing in modelview.Listings)
                     {
-                        var si = await eBayUtility.ebayAPIs.GetSingleItem(settings, listing.ItemID);
-                        var listingStatus = si.ListingStatus;
-
-                        // when navigating to a listing from the website, ebay adds a hash
-                        // you don't seem to need it unless navigating to a completed item in which case it doesn't work
-                        // i'm not sure how to generate the hash
-
-                        ListingStatusCount(listingStatus);
-                        var sellingState = SellingState(listing.ItemID, modelview.SearchResult);
-                        SellingStateCount(sellingState);
-
-                        if (listingStatus != "Completed")
+                        //output += listing.Title + "\n";      if (listing.ItemID == "392535456736")
+                        if (true)
                         {
-                            if (numItems++ < numItemsToFetch)
+                            var si = await eBayUtility.ebayAPIs.GetSingleItem(settings, listing.ItemID);
+                            var listingStatus = si.ListingStatus;
+
+                            // when navigating to a listing from the website, ebay adds a hash
+                            // you don't seem to need it unless navigating to a completed item in which case it doesn't work
+                            // i'm not sure how to generate the hash
+
+                            ListingStatusCount(listingStatus);
+                            var sellingState = SellingState(listing.ItemID, modelview.SearchResult);
+                            SellingStateCount(sellingState);
+
+                            if (listingStatus != "Completed")
                             {
-                                Console.WriteLine(numItems + "/" + listingCount);
-                                var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl, listing.ItemID);
-
-                                if (transactions != null)
+                                if (numItems++ < numItemsToFetch)
                                 {
-                                    var orderHistory = new OrderHistory();
-                                    orderHistory.ItemID = listing.ItemID;
-                                    orderHistory.Title = listing.SellerListing.Title;
-                                    orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
-                                    orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
-                                    orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
-                                    orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
-                                    orderHistory.Description = si.Description;
-                                    //orderHistory.ListingStatus = listingStatus;
-                                    orderHistory.IsSellerVariation = listing.SellerListing.Variation;
+                                    Console.WriteLine(numItems + "/" + listingCount);
+                                    var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl, listing.ItemID);
 
-                                    orderHistory.RptNumber = rptNumber.Value;
-                                    orderHistory.OrderHistoryDetails = transactions;
-                                    string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
-                                    string specificOutput = await db.ItemSpecificSave(si.ItemSpecifics);
+                                    if (transactions != null)
+                                    {
+                                        var orderHistory = new OrderHistory();
+                                        orderHistory.ItemID = listing.ItemID;
+                                        orderHistory.Title = listing.SellerListing.Title;
+                                        orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
+                                        orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
+                                        orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
+                                        orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
+                                        orderHistory.Description = si.Description;
+                                        //orderHistory.ListingStatus = listingStatus;
+                                        orderHistory.IsSellerVariation = listing.SellerListing.Variation;
 
-                                    //string output = eBayUtility.FetchSeller.DumpItemSpecifics(si.SellerListing.ItemSpecifics);
+                                        orderHistory.RptNumber = rptNumber.Value;
+                                        orderHistory.OrderHistoryDetails = transactions;
+                                        string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
+                                        string specificOutput = await db.ItemSpecificSave(si.ItemSpecifics);
 
-                                    // write to log
-                                    //foreach (var order in transactions)
-                                    //{
-                                    //    output += order.Qty + "\n";
-                                    //    output += order.Price + "\n";
-                                    //    output += order.DateOfPurchase + "\n";
-                                    //}
+                                        //string output = eBayUtility.FetchSeller.DumpItemSpecifics(si.SellerListing.ItemSpecifics);
+
+                                        // write to log
+                                        //foreach (var order in transactions)
+                                        //{
+                                        //    output += order.Qty + "\n";
+                                        //    output += order.Price + "\n";
+                                        //    output += order.DateOfPurchase + "\n";
+                                        //}
+                                    }
+                                    else
+                                    {
+                                        //output += "No transactions\n";
+                                    }
+                                    //output += "\n";
                                 }
-                                else
-                                {
-                                    //output += "No transactions\n";
-                                }
-                                //output += "\n";
+                            }
+                            else
+                            {
+                                ++completedItems;
                             }
                         }
-                        else
-                        {
-                            ++completedItems;
-                        }
                     }
+                    dsutil.DSUtil.WriteFile(_logfile, "completed items count: " + completedItems, "admin");
                 }
-                dsutil.DSUtil.WriteFile(_logfile, "completed items count: " + completedItems, "admin");
             }
             catch (Exception exc)
             {

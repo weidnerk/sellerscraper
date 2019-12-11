@@ -111,11 +111,11 @@ namespace webscraper
             {
                 numDaysBack = Convert.ToInt32(args[1]);
             }
-            if (args.Length == 0)
-            {
-                Console.WriteLine("invalid usage.");
-                return;
-            }
+            //if (args.Length == 0)
+            //{
+            //    Console.WriteLine("invalid usage.");
+            //    return;
+            //}
             string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
             var settings = db.GetUserSettings(connStr, HOME_DECOR_USER_ID);
 
@@ -126,7 +126,18 @@ namespace webscraper
             Task.Run(async () =>
             {
                 //numSellerItems = await FetchSeller(settings, seller, 2);
-                numSellerItems = await FetchSeller(settings, seller, Int32.MaxValue, numDaysBack);
+                if (args.Length > 0)
+                {
+                    numSellerItems = await FetchSeller(settings, seller, Int32.MaxValue, numDaysBack);
+                }
+                else
+                {
+                    var sellers = db.GetSellers(settings.StoreID);
+                    foreach(var item in sellers)
+                    {
+                        numSellerItems = await FetchSeller(settings, item.Seller, Int32.MaxValue, numDaysBack);
+                    }
+                }
             }).Wait();
             dsutil.DSUtil.WriteFile(_logfile, "# seller items: " + numSellerItems, "admin");
             dsutil.DSUtil.WriteFile(_logfile, "Complete scan: " + seller, "admin");
@@ -140,7 +151,8 @@ namespace webscraper
             dsutil.DSUtil.WriteFile(_logfile, "Ended: " + SellingStateObject.Ended, "admin");
             dsutil.DSUtil.WriteFile(_logfile, "EndedWithSales: " + SellingStateObject.EndedWithSales, "admin");
             dsutil.DSUtil.WriteFile(_logfile, "EndedWithoutSales: " + SellingStateObject.EndedWithoutSales, "admin");
-            Process.Start("notepad.exe", "log.txt");
+
+            //Process.Start("notepad.exe", "log.txt");
         }
 
         static string SellingState(string itemID, List<SearchResult> searchResult)

@@ -211,13 +211,13 @@ namespace webscraper
             {
                 // first time running seller
                 sh.Updated = DateTime.Now;
-                var sh_updated = await db.SearchHistoryUpdate(sh);
+                var sh_updated = await db.SearchHistoryAdd(sh);
                 rptNumber = sh_updated.ID;
             }
             else
             {
                 sh.Updated = DateTime.Now;
-                await db.SearchHistoryUpdate(sh, "Updated");
+                await db.SearchHistoryUpdate_Updated(sh);
                 //fromDate = new DateTime(2019, 11, 29);
                 retRemoveDetail = await db.HistoryDetailRemove(rptNumber.Value, fromDate.Value);
             }

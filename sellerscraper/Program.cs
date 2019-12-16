@@ -103,55 +103,80 @@ namespace webscraper
 
             string seller = null;
             int numDaysBack = 0;
-            if (args.Length > 0)
+            try
             {
-                seller = args[0];
-            }
-            if (args.Length > 1)
-            {
-                numDaysBack = Convert.ToInt32(args[1]);
-            }
-            //if (args.Length == 0)
-            //{
-            //    Console.WriteLine("invalid usage.");
-            //    return;
-            //}
-            string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
-            var settings = db.GetUserSettings(connStr, HOME_DECOR_USER_ID);
-
-            dsutil.DSUtil.WriteFile(_logfile, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "Start scan: " + seller, "admin");
-
-            int numSellerItems = 0;
-            Task.Run(async () =>
-            {
-                //numSellerItems = await FetchSeller(settings, seller, 2);
                 if (args.Length > 0)
                 {
-                    numSellerItems = await FetchSeller(settings, seller, Int32.MaxValue, numDaysBack);
+                    seller = args[0];
                 }
-                else
+                if (args.Length > 1)
                 {
-                    var sellers = db.GetSellers(settings.StoreID);
-                    foreach(var item in sellers)
-                    {
-                        numSellerItems = await FetchSeller(settings, item.Seller, Int32.MaxValue, numDaysBack);
-                    }
+                    numDaysBack = Convert.ToInt32(args[1]);
                 }
-            }).Wait();
-            dsutil.DSUtil.WriteFile(_logfile, "# seller items: " + numSellerItems, "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "Complete scan: " + seller, "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "LISTING STATUS ", "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "Completed: " + ListingStatusObject.Completed, "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "Active: " + ListingStatusObject.Active, "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "Ended: " + ListingStatusObject.Ended, "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "SELLING STATE ", "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "Canceled: " + SellingStateObject.Canceled, "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "Active: " + SellingStateObject.Active, "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "Ended: " + SellingStateObject.Ended, "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "EndedWithSales: " + SellingStateObject.EndedWithSales, "admin");
-            dsutil.DSUtil.WriteFile(_logfile, "EndedWithoutSales: " + SellingStateObject.EndedWithoutSales, "admin");
+                //if (args.Length == 0)
+                //{
+                //    Console.WriteLine("invalid usage.");
+                //    return;
+                //}
+                string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
+                var settings = db.GetUserSettings(connStr, HOME_DECOR_USER_ID);
 
+                dsutil.DSUtil.WriteFile(_logfile, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Start scan: " + seller, "admin");
+
+                int numSellerItems = 0;
+                Task.Run(async () =>
+                {
+                    //numSellerItems = await FetchSeller(settings, seller, 2);
+                    if (args.Length > 0)
+                    {
+                        numSellerItems = await FetchSeller(settings, seller, Int32.MaxValue, numDaysBack);
+                    }
+                    else
+                    {
+                        var sellers = db.GetSellers(settings.StoreID);
+                        bool runScan = false;
+                        foreach (var item in sellers)
+                        {
+                            runScan = false;
+                            seller = item.Seller;
+                            var sellerProfile = await db.SellerProfileGet(item.Seller);
+                            if (sellerProfile == null)
+                            {
+                                runScan = true;
+                            }
+                            else
+                            {
+                                if (sellerProfile.Active)
+                                {
+                                    runScan = true;
+                                }
+                            }
+                            if (runScan)
+                            {
+                                numSellerItems = await FetchSeller(settings, item.Seller, Int32.MaxValue, numDaysBack);
+                            }
+                        }
+                    }
+                }).Wait();
+                dsutil.DSUtil.WriteFile(_logfile, "# seller items: " + numSellerItems, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Complete scan: " + seller, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "LISTING STATUS ", "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Completed: " + ListingStatusObject.Completed, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Active: " + ListingStatusObject.Active, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Ended: " + ListingStatusObject.Ended, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "SELLING STATE ", "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Canceled: " + SellingStateObject.Canceled, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Active: " + SellingStateObject.Active, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "Ended: " + SellingStateObject.Ended, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "EndedWithSales: " + SellingStateObject.EndedWithSales, "admin");
+                dsutil.DSUtil.WriteFile(_logfile, "EndedWithoutSales: " + SellingStateObject.EndedWithoutSales, "admin");
+            }
+            catch (Exception exc)
+            {
+                string msg = dsutil.DSUtil.ErrMsg("Main, seller: " + seller, exc);
+                dsutil.DSUtil.WriteFile(_logfile, msg, "");
+            }
             //Process.Start("notepad.exe", "log.txt");
         }
 

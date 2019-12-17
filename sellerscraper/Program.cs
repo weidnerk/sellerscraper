@@ -286,7 +286,7 @@ namespace webscraper
                                         orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
                                         orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
                                         orderHistory.Description = si.Description;
-                                        //orderHistory.ListingStatus = listingStatus;
+                                        orderHistory.ListingStatus = listingStatus;
                                         orderHistory.IsSellerVariation = listing.SellerListing.Variation;
 
                                         orderHistory.RptNumber = rptNumber.Value;

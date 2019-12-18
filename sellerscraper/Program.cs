@@ -273,42 +273,30 @@ namespace webscraper
                             {
                                 if (numItems++ < numItemsToFetch)
                                 {
-                                    Console.WriteLine(numItems + "/" + listingCount);
-                                    var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl, listing.ItemID);
-
-                                    if (transactions != null)
+                                    if (true)   // listing.ItemID == "303200616411"
                                     {
-                                        var orderHistory = new OrderHistory();
-                                        orderHistory.ItemID = listing.ItemID;
-                                        orderHistory.Title = listing.SellerListing.Title;
-                                        orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
-                                        orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
-                                        orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
-                                        orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
-                                        orderHistory.Description = si.Description;
-                                        orderHistory.ListingStatus = listingStatus;
-                                        orderHistory.IsSellerVariation = listing.SellerListing.Variation;
+                                        Console.WriteLine(numItems + "/" + listingCount);
+                                        var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl, listing.ItemID);
 
-                                        orderHistory.RptNumber = rptNumber.Value;
-                                        orderHistory.OrderHistoryDetails = transactions;
-                                        string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
-                                        string specificOutput = await db.ItemSpecificSave(si.ItemSpecifics);
+                                        if (transactions != null)
+                                        {
+                                            var orderHistory = new OrderHistory();
+                                            orderHistory.ItemID = listing.ItemID;
+                                            orderHistory.Title = listing.SellerListing.Title;
+                                            orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
+                                            orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
+                                            orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
+                                            orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
+                                            orderHistory.Description = si.Description;
+                                            orderHistory.ListingStatus = listingStatus;
+                                            orderHistory.IsSellerVariation = listing.SellerListing.Variation;
 
-                                        //string output = eBayUtility.FetchSeller.DumpItemSpecifics(si.SellerListing.ItemSpecifics);
-
-                                        // write to log
-                                        //foreach (var order in transactions)
-                                        //{
-                                        //    output += order.Qty + "\n";
-                                        //    output += order.Price + "\n";
-                                        //    output += order.DateOfPurchase + "\n";
-                                        //}
+                                            orderHistory.RptNumber = rptNumber.Value;
+                                            orderHistory.OrderHistoryDetails = transactions;
+                                            string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
+                                            string specificOutput = await db.ItemSpecificSave(si.ItemSpecifics);
+                                        }
                                     }
-                                    else
-                                    {
-                                        //output += "No transactions\n";
-                                    }
-                                    //output += "\n";
                                 }
                             }
                             else

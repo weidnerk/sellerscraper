@@ -273,7 +273,7 @@ namespace webscraper
                             {
                                 if (numItems++ < numItemsToFetch)
                                 {
-                                    if (true)   // listing.ItemID == "303200616411"
+                                    if (true)   // listing.ItemID == "312839444438"
                                     {
                                         Console.WriteLine(numItems + "/" + listingCount);
                                         var transactions = NavigateToTransHistory(listing.SellerListing.EbayURL, listing.ItemID);

@@ -276,14 +276,14 @@ namespace webscraper
                                     if (true)   // listing.ItemID == "303200616411"
                                     {
                                         Console.WriteLine(numItems + "/" + listingCount);
-                                        var transactions = NavigateToTransHistory(listing.SellerListing.EbayUrl, listing.ItemID);
+                                        var transactions = NavigateToTransHistory(listing.SellerListing.EbayURL, listing.ItemID);
 
                                         if (transactions != null)
                                         {
                                             var orderHistory = new OrderHistory();
                                             orderHistory.ItemID = listing.ItemID;
                                             orderHistory.Title = listing.SellerListing.Title;
-                                            orderHistory.EbayUrl = listing.SellerListing.EbayUrl;
+                                            orderHistory.EbayUrl = listing.SellerListing.EbayURL;
                                             orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
                                             orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
                                             orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;

@@ -242,7 +242,7 @@ namespace webscraper
             else
             {
                 sh.Updated = DateTime.Now;
-                await db.SearchHistoryUpdate_Updated(sh);
+                db.SearchHistoryUpdate(sh, "Updated");
                 //fromDate = new DateTime(2019, 11, 29);
                 retRemoveDetail = await db.HistoryDetailRemove(rptNumber.Value, fromDate.Value);
             }
@@ -294,7 +294,7 @@ namespace webscraper
                                             orderHistory.RptNumber = rptNumber.Value;
                                             orderHistory.OrderHistoryDetails = transactions;
                                             string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
-                                            string specificOutput = await db.ItemSpecificSave(si.ItemSpecifics);
+                                            string specificOutput = await db.OrderHistoryItemSpecificSave(dsmodels.DataModelsDB.CopyFromOrderHistory(si.ItemSpecifics));
                                         }
                                     }
                                 }

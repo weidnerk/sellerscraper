@@ -294,7 +294,7 @@ namespace webscraper
                                             orderHistory.RptNumber = rptNumber.Value;
                                             orderHistory.OrderHistoryDetails = transactions;
                                             string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
-                                            string specificOutput = await db.OrderHistoryItemSpecificSave(dsmodels.DataModelsDB.CopyFromOrderHistory(si.ItemSpecifics));
+                                            string specificOutput = await db.OrderHistoryItemSpecificSave(dsmodels.DataModelsDB.CopyFromSellerListing(si.ItemSpecifics));
                                         }
                                     }
                                 }

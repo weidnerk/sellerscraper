@@ -119,7 +119,7 @@ namespace webscraper
                 //    return;
                 //}
                 string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
-                var settings = db.GetUserSettings(connStr, HOME_DECOR_USER_ID);
+                var settings = db.GetUserSettingsView(connStr, HOME_DECOR_USER_ID);
 
                 dsutil.DSUtil.WriteFile(_logfile, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "admin");
                 dsutil.DSUtil.WriteFile(_logfile, "Start scan: " + seller, "admin");
@@ -283,7 +283,7 @@ namespace webscraper
                                             var orderHistory = new OrderHistory();
                                             orderHistory.ItemID = listing.ItemID;
                                             orderHistory.Title = listing.SellerListing.Title;
-                                            orderHistory.EbayUrl = listing.SellerListing.EbayURL;
+                                            orderHistory.EbayURL = listing.SellerListing.EbayURL;
                                             orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
                                             orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
                                             orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;

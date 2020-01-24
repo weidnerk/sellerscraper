@@ -108,6 +108,12 @@ namespace webscraper
                 if (args.Length > 0)
                 {
                     seller = args[0];
+                    var exists = db.SellerExists(seller);
+                    if (!exists)
+                    {
+                        Console.WriteLine("ERROR: Seller does not exist.");
+                        return;
+                    }
                 }
                 if (args.Length > 1)
                 {
@@ -134,7 +140,7 @@ namespace webscraper
                     }
                     else
                     {
-                        var sellers = db.GetSellers(settings.StoreID);
+                        var sellers = db.GetSellers();
                         bool runScan = false;
                         foreach (var item in sellers)
                         {

@@ -119,11 +119,7 @@ namespace webscraper
                 {
                     numDaysBack = Convert.ToInt32(args[1]);
                 }
-                //if (args.Length == 0)
-                //{
-                //    Console.WriteLine("invalid usage.");
-                //    return;
-                //}
+              
                 string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
                 var settings = db.GetUserSettingsView(connStr, HOME_DECOR_USER_ID);
 
@@ -133,7 +129,6 @@ namespace webscraper
                 int numSellerItems = 0;
                 Task.Run(async () =>
                 {
-                    //numSellerItems = await FetchSeller(settings, seller, 2);
                     if (args.Length > 0)
                     {
                         numSellerItems = await FetchSeller(settings, seller, Int32.MaxValue, numDaysBack);
@@ -183,7 +178,6 @@ namespace webscraper
                 string msg = dsutil.DSUtil.ErrMsg("Main, seller: " + seller, exc);
                 dsutil.DSUtil.WriteFile(_logfile, msg, "");
             }
-            //Process.Start("notepad.exe", "log.txt");
         }
 
         static string SellingState(string itemID, List<SearchResult> searchResult)
@@ -249,11 +243,11 @@ namespace webscraper
             {
                 sh.Updated = DateTime.Now;
                 db.SearchHistoryUpdate(sh, "Updated");
-                //fromDate = new DateTime(2019, 11, 29);
                 retRemoveDetail = await db.HistoryDetailRemove(rptNumber.Value, fromDate.Value);
             }
             try
             {
+                // Use eBay API findCompletedItems() to get seller's sold listings but then need to use Selenium to get actual sales by day.
                 var modelview = eBayUtility.FetchSeller.ScanSeller(settings, seller, fromDate.Value);
                 if (modelview != null)
                 {

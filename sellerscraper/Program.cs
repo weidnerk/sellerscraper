@@ -253,57 +253,62 @@ namespace webscraper
                 {
                     int listingCount = modelview.Listings.Count;
                     dsutil.DSUtil.WriteFile(_logfile, "scan seller count: " + listingCount, "admin");
-                    foreach (var listing in modelview.Listings)
+                    string lastItemID = null;
+                    foreach (var listing in modelview.Listings.OrderBy(o => o.ItemID))
                     {
-                        //output += listing.Title + "\n";      if (listing.ItemID == "392535456736")
-                        if (true)
+                        if (lastItemID != listing.ItemID)
                         {
-                            var si = await eBayUtility.ebayAPIs.GetSingleItem(settings, listing.ItemID);
-                            var listingStatus = si.ListingStatus;
-
-                            // when navigating to a listing from the website, ebay adds a hash
-                            // you don't seem to need it unless navigating to a completed item in which case it doesn't work
-                            // i'm not sure how to generate the hash
-
-                            ListingStatusCount(listingStatus);
-                            var sellingState = SellingState(listing.ItemID, modelview.SearchResult);
-                            SellingStateCount(sellingState);
-
-                            if (listingStatus != "Completed")
+                            //output += listing.Title + "\n";      if (listing.ItemID == "392535456736")
+                            if (true)
                             {
-                                if (numItems++ < numItemsToFetch)
+                                var si = await eBayUtility.ebayAPIs.GetSingleItem(settings, listing.ItemID);
+                                var listingStatus = si.ListingStatus;
+
+                                // when navigating to a listing from the website, ebay adds a hash
+                                // you don't seem to need it unless navigating to a completed item in which case it doesn't work
+                                // i'm not sure how to generate the hash
+
+                                ListingStatusCount(listingStatus);
+                                var sellingState = SellingState(listing.ItemID, modelview.SearchResult);
+                                SellingStateCount(sellingState);
+
+                                if (listingStatus != "Completed")
                                 {
-                                    if (true)   // listing.ItemID == "312839444438"
+                                    if (numItems++ < numItemsToFetch)
                                     {
-                                        Console.WriteLine(numItems + "/" + listingCount);
-                                        var transactions = NavigateToTransHistory(listing.SellerListing.EbayURL, listing.ItemID);
-
-                                        if (transactions != null)
+                                        if (true)   // listing.ItemID == "312839444438"
                                         {
-                                            var orderHistory = new OrderHistory();
-                                            orderHistory.ItemID = listing.ItemID;
-                                            orderHistory.Title = listing.SellerListing.Title;
-                                            orderHistory.EbayURL = listing.SellerListing.EbayURL;
-                                            orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
-                                            orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
-                                            orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
-                                            orderHistory.Description = si.Description;
-                                            orderHistory.ListingStatus = listingStatus;
-                                            orderHistory.IsSellerVariation = listing.SellerListing.Variation;
+                                            Console.WriteLine(numItems + "/" + listingCount);
+                                            var transactions = NavigateToTransHistory(listing.SellerListing.EbayURL, listing.ItemID);
 
-                                            orderHistory.RptNumber = rptNumber.Value;
-                                            orderHistory.OrderHistoryDetails = transactions;
-                                            string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
-                                            string specificOutput = await db.OrderHistoryItemSpecificSave(dsmodels.DataModelsDB.CopyFromSellerListing(si.ItemSpecifics));
+                                            if (transactions != null)
+                                            {
+                                                var orderHistory = new OrderHistory();
+                                                orderHistory.ItemID = listing.ItemID;
+                                                orderHistory.Title = listing.SellerListing.Title;
+                                                orderHistory.EbayURL = listing.SellerListing.EbayURL;
+                                                orderHistory.PrimaryCategoryID = listing.PrimaryCategoryID;
+                                                orderHistory.PrimaryCategoryName = listing.PrimaryCategoryName;
+                                                orderHistory.EbaySellerPrice = listing.SellerListing.SellerPrice;
+                                                orderHistory.Description = si.Description;
+                                                orderHistory.ListingStatus = listingStatus;
+                                                orderHistory.IsSellerVariation = listing.SellerListing.Variation;
+
+                                                orderHistory.RptNumber = rptNumber.Value;
+                                                orderHistory.OrderHistoryDetails = transactions;
+                                                string orderHistoryOutput = db.OrderHistorySave(orderHistory, fromDate.Value);
+                                                string specificOutput = await db.OrderHistoryItemSpecificSave(dsmodels.DataModelsDB.CopyFromSellerListing(si.ItemSpecifics));
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            else
-                            {
-                                ++completedItems;
+                                else
+                                {
+                                    ++completedItems;
+                                }
                             }
                         }
+                        lastItemID = listing.ItemID;
                     }
                     dsutil.DSUtil.WriteFile(_logfile, "completed items count: " + completedItems, "admin");
                 }

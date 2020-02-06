@@ -8,13 +8,10 @@ using dsmodels;
 using eBayUtility.WebReference;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.PhantomJS;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Configuration;
-using System.Diagnostics;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -45,7 +42,6 @@ namespace webscraper
         //static string url = "https://www.walmart.com/ip/5-Drawers-Chest-Dresser-White/430586811?athcpid=430586811&athpgid=athenaItemPage&athcgid=null&athznid=PWVUB&athieid=v0&athstid=CS054&athguid=752143b2-4dd-16df492e578199&athancid=null&athena=true";
         static string url = "https://www.ebay.com/itm/Coleman-Camp-Chef-Oven-Stove-Aluminum-Cookware-Bakeware-Portable-Baking-Device-/163163384942";
         //static string url = "https://www.ebay.com/itm/45-Piece-White-Dinnerware-Set-Square-Banquet-Plates-Dishes-Bowls-Kitchen-Dinner/181899005040";
-        static string api_key = "ak-mc65k-44235-ae31p-4bsng-ygmrn";
         private static IWebDriver _driver;
         readonly static string _logfile = "log.txt";
         readonly static string HOME_DECOR_USER_ID = "65e09eec-a014-4526-a569-9f2d3600aa89";
@@ -204,9 +200,8 @@ namespace webscraper
             var sh = new SearchHistory();
             sh.UserId = settings.UserID;
             sh.Seller = seller;
-            //sh.DaysBack = 30;
+            sh.DaysBack = daysToScan;
             //sh.MinSoldFilter = 4;
-            sh.StoreID = settings.StoreID;
 
             int? rptNumber = null;
             DateTime? fromDate;
@@ -448,88 +443,5 @@ namespace webscraper
             driver.Quit();
         }
 
-        static void getpage2()
-        {
-            _driver = new PhantomJSDriver();
-            _driver.Navigate().GoToUrl(url);
-
-            //IWebElement element = _driver.FindElement(By.Name("q"));
-            //string stringToSearchFor = "BDDfy";
-            //element.SendKeys(stringToSearchFor);
-            //element.Submit();
-
-            var ps = _driver.PageSource.ToString();
-
-            // Assert.That(_driver.Title, Is.StringContaining(stringToSearchFor));
-            ((ITakesScreenshot)_driver).GetScreenshot().SaveAsFile("c:\\temp\\wm.png", ImageFormat.Png);
-            _driver.Quit();
-        }
-
-        /// <summary>
-        /// Remember, PhantomJS is no longer a supported project.
-        /// </summary>
-        static void getpage()
-        {
-            var service = PhantomJSDriverService.CreateDefaultService();
-            service.SslProtocol = "any"; //"any" also works
-
-            var driverService = PhantomJSDriverService.CreateDefaultService();
-            driverService.LocalToRemoteUrlAccess = true;
-
-            var driver = new PhantomJSDriver(service);
-            driver.Url = url;
-            driver.Navigate();
-            //the driver can now provide you with what you need (it will execute the script)
-            //get the source of the page
-            var source = driver.PageSource;
-            //fully navigate the dom
-            // var pathElement = driver.FindElementById("some-id");
-            var html = driver.FindElementByTagName("html").GetAttribute("innerHTML");
-            File.WriteAllText(@"C:\temp\htmlloadertext.html", html);
-            driver.Quit();
-        }
-
-        //public static string GetPagePhantomJs(string url)
-        //{
-        //    try
-        //    {
-        //        using (var client = new System.Net.Http.HttpClient())
-        //        {
-        //            client.DefaultRequestHeaders.ExpectContinue = false;
-        //            var pageRequestJson = new System.Net.Http.StringContent(@"{'url':'" + url + "','renderType':'html','outputAsJson':false }");
-        //            var response = client.PostAsync("https://PhantomJsCloud.com/api/browser/v2/ak-mc65k-44235-ae31p-4bsng-ygmrn/", pageRequestJson).Result;
-        //            return response.Content.ReadAsStringAsync().Result;
-        //        }
-        //    }
-        //    catch (Exception exc)
-        //    {
-        //        string msg = exc.Message;
-        //        return null;
-        //    }
-        //}
-
-        public static async Task<string> GetPagePhantomJs_v2(string url)
-        {
-            try
-            {
-                using (var client = new System.Net.Http.HttpClient())
-                {
-                    client.DefaultRequestHeaders.ExpectContinue = false; //REQUIRED! or you will get 502 Bad Gateway errors
-                                                                         //you should look at the HTTP Endpoint docs, section about "userRequest" and "pageRequest" 
-                                                                         //for a listing of all the parameters you can pass via the "pageRequestJson" variable.
-                    var pageRequestJson = new System.Net.Http.StringContent(@"{'url':'" + url + "','renderType':'html','outputAsJson':false }");
-                    var response = await client.PostAsync(string.Format("https://PhantomJScloud.com/api/browser/v2/{0}/", api_key), pageRequestJson);
-                    var responseString = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("*** HTTP Request Finish ***");
-                    Console.WriteLine(responseString);
-                    return null;
-                }
-            }
-            catch (Exception exc)
-            {
-                string msg = exc.Message;
-                return null;
-            }
-        }
     }
 }

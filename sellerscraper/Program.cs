@@ -3,6 +3,30 @@
  * 
  * https://www.youtube.com/watch?v=SKz4VYj5AzQ
  *
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * 02.13.2020
+ * Got error about selenium not supporting my version of chrome.  Not sure what happened - possibly chrome updated overnight.
+ * Opened up installed packages and first of all removed outdated phantom drivers.
+ * 
+ * as far as i know, to do chrome automation with selenium, looks like you need 2 things: chromedriver and selenium webdriver.
+ * 
+ * selenium:
+ * https://www.nuget.org/packages/Selenium.WebDriver
+ * just one file, chromedriver.exe which goes in bin folder.
+ * 
+ * chromedriver:
+ * https://chromedriver.chromium.org/home
+ * When you download this, just one file, chromedriver.exe which goes in your bin folder.
+ * 
+ * At this time, i installed v3.141 of webdriver and
+ * v80.0.3987.16 of chromedriver.
+ * 
+ * In project references, you see a reference to WebDriver but not chromedriver.
+ * 
+ * and another things, I opened chrome on desktop and checked version and it started updating to latest version.
+ * not sure why this doesn't happen automatically.  was on 79, upgraded to 80.
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * 
  */
 using dsmodels;
 using eBayUtility.WebReference;
@@ -327,7 +351,7 @@ namespace webscraper
             {
                 Thread.Sleep(2000);
                 driver.Navigate().GoToUrl(sellerListingUrl);
-                driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(60));
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(60);
                 Thread.Sleep(2000);
 
                 var element = driver.FindElement(By.XPath("//a[contains(@href, 'https://offer.ebay.com/ws/eBayISAPI.dll?ViewBidsLogin')]"));
@@ -363,7 +387,7 @@ namespace webscraper
                 IWebDriver driver = new ChromeDriver();
                 Thread.Sleep(2000);
                 driver.Navigate().GoToUrl(sellerListingUrl);
-                driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(60));
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(60);
                 Thread.Sleep(2000);
 
                 var element = driver.FindElement(By.XPath("//a[contains(@href, 'https://offer.ebay.com/ws/eBayISAPI.dll?ViewBidsLogin')]"));
@@ -386,7 +410,7 @@ namespace webscraper
             IWebDriver driver = new ChromeDriver();
             Thread.Sleep(2000);
             driver.Navigate().GoToUrl(sellerListingUrl);
-            driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(60));
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(60);
 
             var html = driver.FindElement(By.TagName("html")).GetAttribute("innerHTML");
             var h = driver.PageSource;

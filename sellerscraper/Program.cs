@@ -62,10 +62,7 @@ namespace webscraper
     }
     class Program
     {
-        // static string url = "https://www.walmart.com/ip/Sauder-Beginnings-Dresser-Highland-Oak-Finish/260081375";
-        //static string url = "https://www.walmart.com/ip/5-Drawers-Chest-Dresser-White/430586811?athcpid=430586811&athpgid=athenaItemPage&athcgid=null&athznid=PWVUB&athieid=v0&athstid=CS054&athguid=752143b2-4dd-16df492e578199&athancid=null&athena=true";
         static string url = "https://www.ebay.com/itm/Coleman-Camp-Chef-Oven-Stove-Aluminum-Cookware-Bakeware-Portable-Baking-Device-/163163384942";
-        //static string url = "https://www.ebay.com/itm/45-Piece-White-Dinnerware-Set-Square-Banquet-Plates-Dishes-Bowls-Kitchen-Dinner/181899005040";
         readonly static string _logfile = "log.txt";
         readonly static string HOME_DECOR_USER_ID = "65e09eec-a014-4526-a569-9f2d3600aa89";
 
@@ -118,8 +115,6 @@ namespace webscraper
         }
         static void Main(string[] args)
         {
-            //Console.WriteLine(string.Join("\n", TimeZoneInfo.GetSystemTimeZones().OrderBy(o => o.Id).Select(x => x.Id)));
-
             string seller = null;
             int numDaysBack = 0;
             try
@@ -141,7 +136,7 @@ namespace webscraper
               
                 string connStr = ConfigurationManager.ConnectionStrings["OPWContext"].ConnectionString;
                 var settings = db.GetUserSettingsView(connStr, HOME_DECOR_USER_ID);
-
+            
                 dsutil.DSUtil.WriteFile(_logfile, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "admin");
                 dsutil.DSUtil.WriteFile(_logfile, "Start scan: " + seller, "admin");
 
@@ -199,6 +194,12 @@ namespace webscraper
             }
         }
 
+        /// <summary>
+        /// Get state of itemID
+        /// </summary>
+        /// <param name="itemID"></param>
+        /// <param name="searchResult"></param>
+        /// <returns></returns>
         static string SellingState(string itemID, List<SearchResult> searchResult)
         {
             foreach (var x in searchResult)
@@ -214,6 +215,14 @@ namespace webscraper
             return null;
         }
 
+        /// <summary>
+        /// Scrape seller
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <param name="seller"></param>
+        /// <param name="numItemsToFetch"></param>
+        /// <param name="daysToScan"></param>
+        /// <returns></returns>
         static async Task<int> FetchSeller(UserSettingsView settings, string seller, int numItemsToFetch, int daysToScan)
         {
             int numItems = 0;
@@ -224,7 +233,6 @@ namespace webscraper
             sh.UserId = settings.UserID;
             sh.Seller = seller;
             sh.DaysBack = daysToScan;
-            //sh.MinSoldFilter = 4;
 
             int? rptNumber = null;
             DateTime? fromDate;
@@ -435,6 +443,9 @@ namespace webscraper
             File.WriteAllText(@"C:\temp\htmlloadertext.html", h);
             driver.Quit();
         }
+        /// <summary>
+        /// Selenium test method
+        /// </summary>
         static void Wikipedia()
         {
             IWebDriver driver = new ChromeDriver();
@@ -453,7 +464,7 @@ namespace webscraper
             driver.Quit();
         }
         /// <summary>
-        /// Cool seeing Chrome opened
+        /// Selenium test method.
         /// https://www.youtube.com/watch?v=wtH4i7CPg1M
         /// </summary>
         static void YTVideo()

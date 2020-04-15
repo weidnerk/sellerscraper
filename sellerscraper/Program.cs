@@ -12,7 +12,7 @@
  * 
  * selenium:
  * https://www.nuget.org/packages/Selenium.WebDriver
- * just one file, chromedriver.exe which goes in bin folder.
+ * just one file, webdriver.exe which goes in bin folder.
  * 
  * chromedriver:
  * https://chromedriver.chromium.org/home
@@ -354,7 +354,9 @@ namespace webscraper
         static List<OrderHistoryDetail> NavigateToTransHistory(string sellerListingUrl, string itemID)
         {
             List<OrderHistoryDetail> transactions = null;
-            IWebDriver driver = new ChromeDriver();
+            var chromeOptions = new ChromeOptions();
+            chromeOptions.AddArguments("headless");
+            IWebDriver driver = new ChromeDriver(chromeOptions);
             try
             {
                 Thread.Sleep(2000);
